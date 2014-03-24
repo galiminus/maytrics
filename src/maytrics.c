@@ -57,13 +57,13 @@ send_value_from_url (evhtp_request_t *               req,
                          &req->uri->path->full[req->uri->path->matched_soff],
                          req->uri->path->matched_eoff - req->uri->path->matched_soff,
                          &value_length, &db_error);
-    leveldb_free (db_error);
+    free (db_error);
     if (value == NULL) {
         return (EVHTP_RES_NOTFOUND);
     }
 
-    evbuffer_add_printf (req->buffer_out, "%.*s", value_length, value);
-    leveldb_free (value);
+    evbuffer_add_printf (req->buffer_out, "%.*s", (int)value_length, value);
+    free (value);
 
     return (EVHTP_RES_OK);
 }
@@ -192,13 +192,13 @@ metric_controller_post (evhtp_request_t *               req,
                  &req->uri->path->full[req->uri->path->matched_soff],
                  req->uri->path->matched_eoff - req->uri->path->matched_soff,
                  json_dump, strlen (json_dump), &db_error);
-    leveldb_free (db_error);
+    free (db_error);
 
     json_metrics_value = leveldb_get (maytrics_server->db,
                                       maytrics_server->roptions,
                                       user, strlen (user),
                                       &json_metrics_value_length, &db_error);
-    leveldb_free (db_error);
+    free (db_error);
     if (json_metrics_value == NULL) {
         json_metrics_root = json_object ();
     }
@@ -233,9 +233,9 @@ metric_controller_post (evhtp_request_t *               req,
                  maytrics_server->woptions,
                  user, strlen (user),
                  json_metrics_dump, strlen (json_metrics_dump), &db_error);
-    leveldb_free (db_error);
+    free (db_error);
 
-    leveldb_free (json_metrics_value);
+    free (json_metrics_value);
     free (json_metrics_dump);
     free (json_dump);
     free (data);
@@ -251,7 +251,7 @@ metric_controller_post (evhtp_request_t *               req,
     json_decref (json_metrics_root);
 
   free_json_metrics_value:
-    leveldb_free (json_metrics_value);
+    free (json_metrics_value);
 
   free_json_dump:
     free (json_dump);
@@ -354,7 +354,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
     if (maytrics_server->options == NULL) {
         goto exit;
     }
-    leveldb_free(error);
+    free (error);
 
     leveldb_options_set_create_if_missing (maytrics_server->options, 1);
 
@@ -478,7 +478,7 @@ main (int argc, char ** argv)
     evhtp_free (htp);
 
   event_base_free:
-    event_base_free(evbase);
+    event_base_free (evbase);
 
   free_maytrics_server:
     free (maytrics_server);
