@@ -15,7 +15,9 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/maytrics_config.h"
   )
 
-include_directories("${PROJECT_BINARY_DIR}")
+include_directories("${PROJECT_BINARY_DIR}"
+                    "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/"
+                    "${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/")
 
 file(
         GLOB_RECURSE
