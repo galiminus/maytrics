@@ -17,6 +17,9 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}"
                     "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/"
+                    "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/htparse"
+                    "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/oniguruma"
+
                     "${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/")
 
 file(
