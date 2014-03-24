@@ -41,6 +41,8 @@ ExternalProject_add(libevhtp
   GIT_REPOSITORY https://github.com/phorque/libevhtp.git
   GIT_TAG 1.2.9
   INSTALL_COMMAND ""
+  BUILD_IN_SOURCE ON
+  CMAKE_ARGS -DEVHTP_DISABLE_SSL:STRING=ON -DEVHTP_DISABLE_EVTHR:STRING=ON
 )
 
 # add the executable
@@ -50,5 +52,5 @@ add_dependencies(maytrics libzlog)
 
 target_link_libraries (maytrics event pthread leveldb jansson
                       ${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/libzlog.a
-                      ${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp-build/libevhtp.a
+                      ${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/libevhtp.a
 )
