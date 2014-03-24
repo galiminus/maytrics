@@ -6,6 +6,8 @@ project (maytrics)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(PROJECT_CODE_DIR ${PROJECT_SOURCE_DIR}/src)
+set(CMAKE_C_COMPILER g++)
+set(CMAKE_C_FLAGS -fpermissive)
 
 set (maytrics_VERSION_MAJOR 0)
 set (maytrics_VERSION_MINOR 1)
