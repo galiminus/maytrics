@@ -5,3 +5,8 @@ group :test do
   gem "rest-client"
   gem 'shoulda-matchers'
 end
+
+group :development do
+  gem "capistrano"
+end
+
