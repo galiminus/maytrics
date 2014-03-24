@@ -138,7 +138,7 @@ metric_controller_post (evhtp_request_t *               req,
         goto free_metric;
     }
 
-    data = malloc (evbuffer_get_length(req->buffer_in));
+    data = (char *)malloc (evbuffer_get_length(req->buffer_in));
     if (data == NULL) {
         status = EVHTP_RES_SERVERR;
         goto free_metric;
@@ -278,7 +278,8 @@ metric_controller_post (evhtp_request_t *               req,
 void
 metrics_controller (evhtp_request_t * req, void * _maytrics_server)
 {
-    struct maytrics_server *    maytrics_server = _maytrics_server;
+    struct maytrics_server *    maytrics_server =
+        (struct maytrics_server *)_maytrics_server;
 
     int                         status;
     const char *                comment = NULL;
@@ -301,7 +302,8 @@ metrics_controller (evhtp_request_t * req, void * _maytrics_server)
 void
 metric_controller (evhtp_request_t * req, void * _maytrics_server)
 {
-    struct maytrics_server *    maytrics_server = _maytrics_server;
+    struct maytrics_server *    maytrics_server =
+        (struct maytrics_server *)_maytrics_server;
 
     int                         status;
 
@@ -375,7 +377,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
         goto leveldb_writeoptions_destroy;
     }
 
-    maytrics_server->metrics_regex = malloc (sizeof (regex_t));
+    maytrics_server->metrics_regex = (regex_t *)malloc (sizeof (regex_t));
     if (maytrics_server->metrics_regex == NULL) {
         goto leveldb_readoptions_destroy;
     }
@@ -419,7 +421,7 @@ main (int argc, char ** argv)
     evhtp_callback_t *          metrics_controller_cb;
     evhtp_callback_t *          metric_controller_cb;
 
-    maytrics_server = malloc (sizeof (struct maytrics_server));
+    maytrics_server = (struct maytrics_server *)malloc (sizeof (struct maytrics_server));
     if (maytrics_server == NULL) {
         status = 1;
         goto exit;
