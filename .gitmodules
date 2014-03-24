@@ -1,6 +1,6 @@
 [submodule "vendor/libevhtp"]
 	path = vendor/libevhtp
-	url = git@github.com:phorque/libevhtp.git
+	url = https://github.com/phorque/libevhtp.git
 [submodule "vendor/zlog"]
 	path = vendor/zlog
 	url = https://github.com/HardySimpson/zlog.git

@@ -15,6 +15,11 @@ struct maytrics_server {
     leveldb_writeoptions_t *    woptions;
 
     regex_t *                   metrics_regex;
+
+    const char *                host;
+    int                         port;
+
+    const char *                db_path;
 };
 
 void
@@ -322,7 +327,26 @@ metric_controller (evhtp_request_t * req, void * _maytrics_server)
 int
 init_maytrics_server (struct maytrics_server *  maytrics_server)
 {
-    char *      error = NULL;
+    char *              error = NULL;
+    const char *        port;
+
+    maytrics_server->host = getenv ("MAYTRICS_SERVER_HOST");
+    if (maytrics_server->host == NULL) {
+        maytrics_server->host = "localhost";
+    }
+
+    port = getenv ("MAYTRICS_SERVER_PORT");
+    if (port == NULL) {
+        maytrics_server->port = 8081;
+    }
+    else {
+        maytrics_server->port = atoi (port);
+    }
+
+    maytrics_server->db_path = getenv ("MAYTRICS_SERVER_DB_PATH");
+    if (maytrics_server->db_path == NULL) {
+        maytrics_server->db_path = "/tmp/maytrics_tmp_base";
+    }
 
     maytrics_server->options = leveldb_options_create ();
     if (maytrics_server->options == NULL) {
@@ -332,7 +356,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     leveldb_options_set_create_if_missing (maytrics_server->options, 1);
 
-    maytrics_server->db = leveldb_open (maytrics_server->options, "testdb", &error);
+    maytrics_server->db = leveldb_open (maytrics_server->options, maytrics_server->db_path, &error);
     if (maytrics_server->db == NULL) {
         goto leveldb_options_destroy;
     }
@@ -434,10 +458,11 @@ main (int argc, char ** argv)
         goto evhtp_free;
     }
 
-    if (evhtp_bind_socket (htp, "0.0.0.0", 8081, 1024) != 0) {
+    if (evhtp_bind_socket (htp, maytrics_server->host, maytrics_server->port, 1024) != 0) {
         status = 8;
         goto evhtp_free;
     }
+    printf ("Server launched on %s:%d\n", maytrics_server->host, maytrics_server->port);
 
     if (event_base_loop (evbase, 0) == -1) {
         status = 9;
