@@ -53,7 +53,8 @@ add_executable(maytrics ${source_files})
 
 add_dependencies(maytrics libzlog)
 
-target_link_libraries (maytrics event pthread leveldb jansson
+target_link_libraries (maytrics event leveldb jansson
                       ${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/libzlog.a
                       ${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/libevhtp.a
+                      pthread
 )
