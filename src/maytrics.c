@@ -339,6 +339,10 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     port = getenv ("MAYTRICS_SERVER_PORT");
     if (port == NULL) {
+        port = getenv ("PORT");
+    }
+
+    if (port == NULL) {
         maytrics_server->port = 8081;
     }
     else {
