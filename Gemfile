@@ -9,8 +9,6 @@ end
 group :development do
   gem "capistrano"
   gem "capistrano-foreman"
-  gem "capistrano-rvm"
-  gem "sshkit"
 end
 
 gem "foreman"
