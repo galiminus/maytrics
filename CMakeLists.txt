@@ -20,25 +20,12 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}"
                     "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/"
                     "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/htparse"
-                    "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/oniguruma"
-
-                    "${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/")
+                    "${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/oniguruma")
 
 file(
         GLOB_RECURSE
         source_files
         ${PROJECT_CODE_DIR}/*
-)
-
-ExternalProject_add(libzlog
-  GIT_REPOSITORY https://github.com/HardySimpson/zlog.git
-  GIT_TAG 1.2.12
-  BUILD_COMMAND make
-  CONFIGURE_COMMAND ""
-  BUILD_IN_SOURCE ON
-  LOG_BUILD ON
-  LOG_INSTALL ON
-  INSTALL_COMMAND ""
 )
 
 set(EVHTP_DISABLE_SSL on)
@@ -53,10 +40,9 @@ ExternalProject_add(libevhtp
 # add the executable
 add_executable(maytrics ${source_files})
 
-add_dependencies(maytrics libzlog)
+add_dependencies(maytrics libevhtp)
 
 target_link_libraries (maytrics event leveldb snappy jansson
-                      ${PROJECT_SOURCE_DIR}/libzlog-prefix/src/libzlog/src/libzlog.a
                       ${PROJECT_SOURCE_DIR}/libevhtp-prefix/src/libevhtp/libevhtp.a
                       pthread
 )
