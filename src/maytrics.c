@@ -22,6 +22,12 @@ struct maytrics_server {
     const char *                db_path;
 };
 
+#define clean_errno() (errno == 0 ? "None" : strerror(errno))
+#define log_err(M, ...) fprintf(stderr, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
+#define log_debug(M, ...) fprintf(stderr, "[DEBUG] (%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_info(M, ...) fprintf(stderr, "[INFO] " M "\n", ##__VA_ARGS__)
+
+
 void
 set_metrics_comment (evhtp_request_t *  req,
                      int                status)
@@ -39,6 +45,8 @@ set_metrics_comment (evhtp_request_t *  req,
     if (comment) {
         evbuffer_add_printf (req->buffer_out, "{comment: \"%s\"}", comment);
     }
+    log_info ("%s: %d\n", req->uri->path->full, status);
+
 
     return ;
 }
@@ -356,6 +364,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     maytrics_server->options = leveldb_options_create ();
     if (maytrics_server->options == NULL) {
+        log_err ("could not create database [%s]\n", maytrics_server->db_path);
         goto exit;
     }
     free (error);
@@ -364,6 +373,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     maytrics_server->db = leveldb_open (maytrics_server->options, maytrics_server->db_path, &error);
     if (maytrics_server->db == NULL) {
+        log_err ("could not open database [%s]\n");
         goto leveldb_options_destroy;
     }
 
@@ -373,11 +383,13 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     maytrics_server->woptions = leveldb_writeoptions_create ();
     if (maytrics_server->woptions == NULL) {
+        log_err ("could not create database write options\n");
         goto leveldb_close;
     }
 
     maytrics_server->roptions = leveldb_readoptions_create ();
     if (maytrics_server->roptions == NULL) {
+        log_err ("could not create database read options\n");
         goto leveldb_writeoptions_destroy;
     }
 
@@ -388,6 +400,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
     if (regcomp (maytrics_server->metrics_regex,
                  "/api/v1/(.+)/(.+).json",
                  REG_EXTENDED) == -1) {
+        log_err ("fatal error in regcomp\n");
         goto free_metrics_regex;
     }
 

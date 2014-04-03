@@ -14,16 +14,18 @@ after  "deploy:restart", "deploy:cleanup"
 
 set :foreman_sudo, 'sudo'
 set :foreman_upstart_path, '/etc/init/'
-set :foreman_options, {
-  app: application,
-  log: "#{shared_path}/log",
-  user: 'maytrics'
-}
+set :foreman_options do
+  {
+    app: application,
+    log: "#{shared_path}/log",
+    user: 'maytrics'
+  }
+end
 
 namespace :deploy do
   task :compile do
     top.upload(env_file, "#{current_path}/.env")
-    run "cd #{current_path} && cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release && make"
+    run "cd #{current_path} && bundle install && cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release && make"
     foreman.export
   end
 
