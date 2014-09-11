@@ -2,4 +2,5 @@ cmake_minimum_required (VERSION 2.6)
 project (maytrics)
 add_executable(maytrics "src/maytrics.c")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 target_link_libraries(maytrics evhtp jansson event event_openssl pthread ssl crypto leveldb)
