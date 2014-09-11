@@ -372,7 +372,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     maytrics_server->db = leveldb_open (maytrics_server->options, maytrics_server->db_path, &error);
     if (maytrics_server->db == NULL) {
-        log_err ("could not open database [%s]\n");
+        log_err ("could not open database [%s]\n", maytrics_server->db_path);
         goto leveldb_options_destroy;
     }
 
