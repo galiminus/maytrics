@@ -1,1 +1,1 @@
-server: bin/Release/maytrics
+server: bin/maytrics
