@@ -103,19 +103,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named libevhtp
-
-# Build rule for target.
-libevhtp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 libevhtp
-.PHONY : libevhtp
-
-# fast build rule for target.
-libevhtp/fast:
-	$(MAKE) -f CMakeFiles/libevhtp.dir/build.make CMakeFiles/libevhtp.dir/build
-.PHONY : libevhtp/fast
-
-#=============================================================================
 # Target rules for targets named maytrics
 
 # Build rule for target.
@@ -159,7 +146,6 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... libevhtp"
 	@echo "... maytrics"
 	@echo "... rebuild_cache"
 	@echo "... src/maytrics.o"
