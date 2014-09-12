@@ -79,7 +79,7 @@ send_value_from_url (evhtp_request_t *               req,
 			&req->uri->path->full[req->uri->path->matched_soff],
 			req->uri->path->matched_eoff - req->uri->path->matched_soff);
   if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-    log_error ("redisCommand() failed: %s", maytrics->redis->errstr);
+    log_error ("redisCommand(GET) failed: %s", maytrics->redis->errstr);
     if (reply) {
       freeReplyObject (reply);
     }
@@ -232,7 +232,7 @@ metric_controller_post (evhtp_request_t *               req,
 			req->uri->path->matched_eoff - req->uri->path->matched_soff,
 			json_dump, strlen (json_dump));
   if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-    log_error ("redisCommand() failed: %s", maytrics->redis->errstr);
+    log_error ("redisCommand(SET) failed: %s", maytrics->redis->errstr);
     if (reply) {
       freeReplyObject (reply);
     }
@@ -246,7 +246,7 @@ metric_controller_post (evhtp_request_t *               req,
 			user, strlen (user));
 
   if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-    log_error ("redisCommand() failed: %s", maytrics->redis->errstr);
+    log_error ("redisCommand(GET) failed: %s", maytrics->redis->errstr);
     if (reply) {
       freeReplyObject (reply);
     }
@@ -289,7 +289,7 @@ metric_controller_post (evhtp_request_t *               req,
 			user, strlen (user),
 			json_metrics_dump, strlen (json_metrics_dump));
   if (reply == NULL || reply->type == REDIS_REPLY_NIL) {
-    log_error ("redisCommand() failed: %s", maytrics->redis->errstr);
+    log_error ("redisCommand(SET) failed: %s", maytrics->redis->errstr);
     if (reply) {
       freeReplyObject (reply);
     }
@@ -447,6 +447,8 @@ init_redis_client (struct maytrics * maytrics)
   const char *      host;
   const char *      port;
 
+  redisReply *	    reply;
+
   host = getenv ("REDIS_HOST");
   if (host == NULL) {
     host = "127.0.0.1";
@@ -462,7 +464,35 @@ init_redis_client (struct maytrics * maytrics)
     log_fatal ("redisConnect(%s, %s) failed.", host, port);
     goto exit;
   }
+
+  if (getenv ("REDIS_PASSWORD")) {
+    reply = redisCommand (maytrics->redis, "AUTH %s", getenv ("REDIS_PASSWORD"));
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+      log_error ("redisCommand(AUTH) failed: %s", maytrics->redis->errstr);
+      if (reply) {
+	freeReplyObject (reply);
+      }
+      goto free_redis_client;
+    }
+    freeReplyObject (reply);
+  }
+
+  if (getenv ("REDIS_DATABASE")) {
+    reply = redisCommand (maytrics->redis, "SELECT %s", getenv ("REDIS_DATABASE"));
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+      log_error ("redisCommand(SELECT) failed: %s", maytrics->redis->errstr);
+      if (reply) {
+	freeReplyObject (reply);
+      }
+      goto free_redis_client;
+    }
+    freeReplyObject (reply);
+  }
+
   return (0);
+
+ free_redis_client:
+  redisFree (maytrics->redis);
 
  exit:
   return (-1);
