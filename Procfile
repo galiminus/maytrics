@@ -1,1 +1,1 @@
-server: bin/maytrics
+web: bin/maytrics
