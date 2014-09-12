@@ -1,2 +1,2 @@
 all:
-	gcc src/main.c -o bin/maytrics -levhtp -ljansson -levent -lpthread -lssl -lcrypto -lleveldb
+	gcc src/main.c -o bin/maytrics -l:libevent-2.0.so.5 -levhtp -ljansson -lpthread -lssl -lcrypto -lleveldb
