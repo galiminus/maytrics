@@ -1,1 +1,1 @@
-web: bin/maytrics
+web: bin/maytrics
