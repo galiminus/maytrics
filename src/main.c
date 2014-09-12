@@ -339,12 +339,12 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
     char *              error = NULL;
     const char *        port;
 
-    maytrics_server->host = getenv ("MAYTRICS_SERVER_HOST");
+    maytrics_server->host = getenv ("HOST");
     if (maytrics_server->host == NULL) {
         maytrics_server->host = "localhost";
     }
 
-    port = getenv ("MAYTRICS_SERVER_PORT");
+    port = getenv ("PORT");
     if (port == NULL) {
         port = getenv ("PORT");
     }
@@ -356,7 +356,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
         maytrics_server->port = atoi (port);
     }
 
-    maytrics_server->db_path = getenv ("MAYTRICS_SERVER_DB_PATH");
+    maytrics_server->db_path = getenv ("DB_PATH");
     if (maytrics_server->db_path == NULL) {
         maytrics_server->db_path = "/tmp/maytrics_tmp_base";
     }
