@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe "MetricController" do
   before do
-    @pid = Process.spawn "bin/Debug/maytrics"
+    @pid = Process.spawn "bin/maytrics"
     sleep 2
   end
 

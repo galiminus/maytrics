@@ -341,7 +341,7 @@ init_maytrics_server (struct maytrics_server *  maytrics_server)
 
     maytrics_server->host = getenv ("HOST");
     if (maytrics_server->host == NULL) {
-        maytrics_server->host = "localhost";
+        maytrics_server->host = "127.0.0.1";
     }
 
     port = getenv ("PORT");
