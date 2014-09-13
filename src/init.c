@@ -49,6 +49,8 @@ init_maytrics (struct maytrics *  maytrics)
         log_level = LOG_DEBUG;
     }
 
+    maytrics->allowed_origin = getenv ("ALLOWED_ORIGIN");
+
     SSL_library_init();
     ERR_load_crypto_strings();
     SSL_load_error_strings();

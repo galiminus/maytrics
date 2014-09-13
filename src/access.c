@@ -242,8 +242,6 @@ access_controller_get (evhtp_request_t *        req,
         goto evhttp_connection_free;
     }
 
-    log_error("path %s%s\n", GOOGLE_HOST, path);
-
     output_headers = evhttp_request_get_output_headers (profile_request);
     evhttp_add_header(output_headers, "Host", GOOGLE_HOST);
     evhttp_add_header(output_headers, "Connection", "close");
@@ -290,7 +288,13 @@ access_controller (evhtp_request_t * req, void * _maytrics)
 
     int                  status;
 
+    if (set_origin (req, maytrics) == -1) {
+        status = EVHTP_RES_SERVERR;
+        goto exit;
+    }
+
     switch (req->method) {
+    case htp_method_HEAD:
     case htp_method_GET:
         status = access_controller_get (req, maytrics);
         break ;
@@ -298,6 +302,8 @@ access_controller (evhtp_request_t * req, void * _maytrics)
     default:
         status = EVHTP_RES_METHNALLOWED;
     }
+
+  exit:
     if (status != 0) {
         set_metrics_comment (req, status);
         evhtp_send_reply (req, status);

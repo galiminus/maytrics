@@ -17,6 +17,7 @@ metrics_controller (evhtp_request_t * req, void * _maytrics)
     int                         status;
 
     switch (req->method) {
+    case htp_method_HEAD:
     case htp_method_GET:
         status = metrics_controller_get (req, maytrics);
         break ;

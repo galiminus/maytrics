@@ -239,6 +239,7 @@ metric_controller (evhtp_request_t * req, void * _maytrics)
         status = metric_controller_post (req, maytrics);
         break ;
 
+    case htp_method_HEAD:
     case htp_method_GET:
         status = metric_controller_get (req, maytrics);
         break ;

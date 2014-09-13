@@ -30,6 +30,8 @@ struct maytrics {
 
     SSL_CTX *                   ssl_ctx;
     SSL *                       ssl;
+
+    const char *                allowed_origin;
 };
 
 enum {

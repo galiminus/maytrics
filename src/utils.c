@@ -1,5 +1,23 @@
 #include "main.h"
 
+int
+set_origin (evhtp_request_t *        req,
+            struct maytrics *        maytrics)
+{
+    evhtp_header_t *    header;
+    if (!maytrics->allowed_origin) {
+        return (0);
+    }
+    header = evhtp_header_new("Access-Control-Allow-Origin",
+                              maytrics->allowed_origin, 0, 0);
+    if (header == NULL) {
+        return (-1);
+    }
+    evhtp_headers_add_header(req->headers_out, header);
+
+    return (0);
+}
+
 void
 set_metrics_comment (evhtp_request_t *  req,
                      int                status)
