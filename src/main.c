@@ -13,7 +13,7 @@ main ()
 
     int                         status = 0;
 
-    struct maytrics *    maytrics;
+    struct maytrics *           maytrics;
 
     evhtp_callback_t *          access_controller_cb;
     evhtp_callback_t *          metrics_controller_cb;
@@ -62,21 +62,21 @@ main ()
         goto evhtp_free;
     }
 
-    metric_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+/.+).json",
-                                               metric_controller,
-                                               maytrics);
-    if (metric_controller_cb == NULL) {
-        log_fatal("evhtp_set_regex_cb() failed.");
-        status = 7;
-        goto evhtp_free;
-    }
-
-    metrics_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+).json",
+    metrics_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics.json",
                                                 metrics_controller,
                                                 maytrics);
     if (metrics_controller_cb == NULL) {
         log_fatal ("evhtp_set_regex_cb() failed.");
         status = 8;
+        goto evhtp_free;
+    }
+
+    metric_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/.+/metrics/(.+).json",
+                                               metric_controller,
+                                               maytrics);
+    if (metric_controller_cb == NULL) {
+        log_fatal("evhtp_set_regex_cb() failed.");
+        status = 7;
         goto evhtp_free;
     }
 

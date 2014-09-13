@@ -1,4 +1,40 @@
+#include <limits.h>
+
 #include "main.h"
+
+long
+generate_id (struct maytrics *       maytrics)
+{
+    redisReply *	reply;
+    long long           id;
+
+    reply = redisCommand (maytrics->redis, "INCR id");
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+        log_error ("redisCommand(INCR) failed: %s.", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        goto exit;
+    }
+
+    if (reply->type != REDIS_REPLY_INTEGER) {
+        log_error ("redisCommand(INCR) ID is not an integer.");
+        goto free_reply_object;
+    }
+    id = reply->integer;
+    if (id > LONG_MAX) {
+        log_error ("redisCommand(INCR) ID is too big.");
+    }
+    freeReplyObject (reply);
+
+    return ((long) id);
+
+  free_reply_object:
+    freeReplyObject (reply);
+
+  exit:
+    return (-1);
+}
 
 int
 set_origin (evhtp_request_t *        req,
@@ -36,44 +72,9 @@ set_metrics_comment (evhtp_request_t *  req,
         break ;
     }
     if (comment) {
-        evbuffer_add_printf (req->buffer_out, "{comment: \"%s\"}", comment);
+        evbuffer_add_printf (req->buffer_out, "{\"comment\": \"%s\"}", comment);
     }
     log_debug ("%s: %d", req->uri->path->full, status);
 
     return ;
-}
-
-int
-send_value_from_url (evhtp_request_t *        req,
-                     struct maytrics *        maytrics)
-{
-    int			status;
-    redisReply *		reply;
-
-    reply = redisCommand (maytrics->redis, "GET metrics:%b",
-                          &req->uri->path->full[req->uri->path->matched_soff],
-                          req->uri->path->matched_eoff - req->uri->path->matched_soff);
-    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-        log_error ("redisCommand(GET) failed: %s", maytrics->redis->errstr);
-        if (reply) {
-            freeReplyObject (reply);
-        }
-
-        status = EVHTP_RES_SERVERR;
-        goto exit;
-    }
-    if (reply->type == REDIS_REPLY_NIL) {
-        status = EVHTP_RES_NOTFOUND;
-        goto free_reply_object;
-    }
-
-    evbuffer_add_printf (req->buffer_out, "%.*s", reply->len, reply->str);
-    freeReplyObject (reply);
-
-    return (EVHTP_RES_OK);
-
-  free_reply_object:
-    freeReplyObject(reply);
-  exit:
-    return (status);
 }
