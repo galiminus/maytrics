@@ -3,12 +3,12 @@ require 'spec_helper'
 describe "MetricController" do
   before do
     system "redis-cli flushall"
-    @pid = Process.spawn "bin/maytrics"
-    sleep 2
+#    @pid = Process.spawn "bin/maytrics"
+#    sleep 2
   end
 
   after do
-    Process.kill 'TERM', @pid
+#    Process.kill 'TERM', @pid
   end
 
   it "save a metric" do
@@ -53,9 +53,9 @@ describe "MetricController" do
     end
   end
 
-  it "should return 404 if metrics are not found" do
+  it "should return [] if metrics are not found" do
     RestClient.get "#{$host}/notestuser/metrics.json" do |response|
-      response.code.should == 404
+      response.body.should == "[]"
     end
   end
 
@@ -64,9 +64,8 @@ describe "MetricController" do
     response.code.should == 201
     id1 = JSON.parse(response.body)['id']
 
-    response = RestClient.post "#{$host}/testuser/metrics/#{id1}.json", {metric: "metric1", value: 6}.to_json
+    response = RestClient.put "#{$host}/testuser/metrics/#{id1}.json", {metric: "metric1", value: 6}.to_json
     response.code.should == 200
-    id1 = JSON.parse(response.body)['id']
 
     response = RestClient.post "#{$host}/testuser/metrics.json", {metric: "metric2", value: 3}.to_json
     response.code.should == 201
@@ -75,12 +74,34 @@ describe "MetricController" do
     response = RestClient.get "#{$host}/testuser/metrics.json"
     JSON.parse(response).should == [
                                     {
-                                      "name" => "metric1",
+                                      "metric" => "metric1",
                                       "value" => 6,
                                       "id" => id1
                                     },
                                     {
-                                      "name" => "metric2",
+                                      "metric" => "metric2",
+                                      "value" => 3,
+                                      "id" => id2
+                                    }
+                                   ]
+  end
+
+  it "can delete metrics" do
+    response = RestClient.post "#{$host}/testuser/metrics.json", {metric: "metric1", value: 5}.to_json
+    response.code.should == 201
+    id1 = JSON.parse(response.body)['id']
+
+    response = RestClient.delete "#{$host}/testuser/metrics/#{id1}.json"
+    response.code.should == 200
+
+    response = RestClient.post "#{$host}/testuser/metrics.json", {metric: "metric2", value: 3}.to_json
+    response.code.should == 201
+    id2 = JSON.parse(response.body)['id']
+
+    response = RestClient.get "#{$host}/testuser/metrics.json"
+    JSON.parse(response).should == [
+                                    {
+                                      "metric" => "metric2",
                                       "value" => 3,
                                       "id" => id2
                                     }

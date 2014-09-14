@@ -8,11 +8,12 @@ int
 extract_user_and_id_from_path (evhtp_request_t *       req,
                                struct maytrics *       maytrics,
                                char **                 user,
-                               char **                 id)
+                               long *                  id)
 {
-#define METRICS_REGEX_MAX_MATCH 3
+#define METRICS_REGEX_MAX_MATCH 4
 
     regmatch_t          pmatch[METRICS_REGEX_MAX_MATCH];
+    char *              id_string;
 
     if (regexec (maytrics->metric_regex,
                  req->uri->path->full,
@@ -27,12 +28,15 @@ extract_user_and_id_from_path (evhtp_request_t *       req,
         goto exit;
     }
 
-    *id = strndup (&req->uri->path->full[pmatch[2].rm_so],
-                   pmatch[1].rm_eo - pmatch[2].rm_so);
-    if (*id == NULL) {
+    id_string = strndup (&req->uri->path->full[pmatch[2].rm_so],
+                         pmatch[1].rm_eo - pmatch[2].rm_so);
+    if (id == NULL) {
         log_error ("strndup() failed.");
         goto free_user;
     }
+    *id = atol (id_string);
+    free (id_string);
+
     return (0);
 
   free_user:
@@ -47,7 +51,7 @@ metric_controller_delete (evhtp_request_t *        req,
                           struct maytrics *        maytrics)
 {
     char *              user;
-    char *              id;
+    long                id;
     int                 status;
 
     if (extract_user_and_id_from_path (req, maytrics, &user, &id) == -1) {
@@ -57,7 +61,6 @@ metric_controller_delete (evhtp_request_t *        req,
     status = delete_metric (req, maytrics, user, id);
 
     free (user);
-    free (id);
 
     return (status);
 }
@@ -67,7 +70,7 @@ metric_controller_put (evhtp_request_t *        req,
                           struct maytrics *        maytrics)
 {
     char *              user;
-    char *              id;
+    long                id;
     int                 status;
 
     if (extract_user_and_id_from_path (req, maytrics, &user, &id) == -1) {
@@ -77,7 +80,6 @@ metric_controller_put (evhtp_request_t *        req,
     status = update_metric (req, maytrics, user, id);
 
     free (user);
-    free (id);
 
     return (status);
 }
@@ -87,7 +89,7 @@ metric_controller_get (evhtp_request_t *        req,
                        struct maytrics *        maytrics)
 {
     char *              user;
-    char *              id;
+    long                id;
     int                 status;
 
     if (extract_user_and_id_from_path (req, maytrics, &user, &id) == -1) {
@@ -97,7 +99,6 @@ metric_controller_get (evhtp_request_t *        req,
     status = get_metric (req, maytrics, user, id);
 
     free (user);
-    free (id);
 
     return (status);
 }

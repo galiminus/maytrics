@@ -1,6 +1,5 @@
 #include "main.h"
 #include "utils.h"
-#include "redis.h"
 #include "init.h"
 #include "access_controller.h"
 #include "metric_controller.h"

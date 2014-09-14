@@ -103,7 +103,6 @@ redis_backend_store_metric (struct maytrics *        maytrics,
         if (reply) {
             freeReplyObject (reply);
         }
-
         status = EVHTP_RES_SERVERR;
         goto free_json_dump;
     }
@@ -114,6 +113,50 @@ redis_backend_store_metric (struct maytrics *        maytrics,
 
   free_json_dump:
     free (json_dump);
+
+  exit:
+    return (status);
+}
+
+int
+redis_backend_get_metric (struct maytrics *        maytrics,
+                          const char *             user,
+                          long                     id,
+                          json_t **                json_root)
+{
+    redisReply *	reply;
+
+    int			status;
+    json_error_t        json_error;
+
+    reply = redisCommand (maytrics->redis, "GET metrics:ids:%s:%ld",
+                          user, id);
+
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+        log_error ("redisCommand(GET) failed: %s", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        status = EVHTP_RES_SERVERR;
+        goto exit;
+    }
+    if (reply->type == REDIS_REPLY_NIL) {
+        status = EVHTP_RES_NOTFOUND;
+        goto free_reply_object;
+    }
+
+    *json_root = json_loadb (reply->str, reply->len, 0, &json_error);
+    if (*json_root == NULL) {
+        log_error ("json_object() or json_loadb() failed.");
+        status = EVHTP_RES_SERVERR;
+        goto free_reply_object;
+    }
+
+    freeReplyObject (reply);
+    return (0);
+
+  free_reply_object:
+    freeReplyObject (reply);
 
   exit:
     return (status);

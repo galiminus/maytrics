@@ -7,8 +7,7 @@ extract_user_from_path (evhtp_request_t *       req,
                         struct maytrics *       maytrics,
                         char **                 user)
 {
-#define METRICS_REGEX_MAX_MATCH 2
-
+#define METRICS_REGEX_MAX_MATCH 3
     regmatch_t          pmatch[METRICS_REGEX_MAX_MATCH];
 
     if (regexec (maytrics->metrics_regex,
@@ -45,8 +44,7 @@ metrics_controller_get (evhtp_request_t *       req,
 
 int
 metrics_controller_post (evhtp_request_t *        req,
-                         struct maytrics *        maytrics,
-                         long *                   id)
+                         struct maytrics *        maytrics)
 {
     char *              user;
     int                 status;
@@ -55,7 +53,7 @@ metrics_controller_post (evhtp_request_t *        req,
         return (EVHTP_RES_SERVERR);
     }
 
-    status = create_metric (req, maytrics, user, id);
+    status = create_metric (req, maytrics, user);
     free (user);
 
     return (status);
@@ -68,25 +66,22 @@ metrics_controller (evhtp_request_t * req, void * _maytrics)
         (struct maytrics *)_maytrics;
 
     int                         status;
-    long                        id = 0;
 
     switch (req->method) {
     case htp_method_POST:
-        status = metrics_controller_post (req, maytrics, &id);
-        evbuffer_add_printf (req->buffer_out, "{\"id\": %ld}", id);
+        status = metrics_controller_post (req, maytrics);
         break ;
 
     case htp_method_HEAD:
     case htp_method_GET:
         status = metrics_controller_get (req, maytrics);
-        set_metrics_comment (req, status);
         break ;
 
     default:
         status = EVHTP_RES_METHNALLOWED;
-        set_metrics_comment (req, status);
     }
 
+    set_metrics_comment (req, status);
     evhtp_send_reply (req, status);
 
     return ;

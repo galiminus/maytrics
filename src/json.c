@@ -37,7 +37,9 @@ add_id_to_object (struct maytrics *     maytrics,
 
     int         status;
 
-    *id = generate_id (maytrics);
+    if (*id == 0) {
+        *id = generate_id (maytrics);
+    }
     if (*id == -1) {
         status = EVHTP_RES_SERVERR;
         goto exit;
@@ -50,7 +52,7 @@ add_id_to_object (struct maytrics *     maytrics,
         goto exit;
     }
 
-    if (json_object_set (json_root, "id", json_id) == -1) {
+    if (json_object_set_new (json_root, "id", json_id) == -1) {
         log_error ("json_object_set() failed.");
         status = EVHTP_RES_SERVERR;
         goto json_decref;

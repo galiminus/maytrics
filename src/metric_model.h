@@ -12,23 +12,22 @@ int
 get_metric (evhtp_request_t *        req,
             struct maytrics *        maytrics,
             const char *             user,
-            const char *             id);
+            long                     id);
 
 int
 delete_metric (evhtp_request_t *        req,
                struct maytrics *        maytrics,
                const char *             user,
-               const char *             id);
+               long                     id);
 int
 create_metric (evhtp_request_t *        req,
                struct maytrics *        maytrics,
-               const char *             user,
-               long *                   id);
+               const char *             user);
 
 int
 update_metric (evhtp_request_t *        req,
                struct maytrics *        maytrics,
                const char *             user,
-               const char *             id);
+               long                     id);
 
 #endif /* !__MAYTRICS_METRIC_MODEL_H__ */

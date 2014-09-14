@@ -24,9 +24,8 @@ init_maytrics (struct maytrics *  maytrics)
         log_fatal ("malloc() failed.");
         goto exit;
     }
-    if (regcomp (maytrics->metrics_regex,
-                 "/api/v1/(.+)/metrics.json",
-                 REG_EXTENDED) == -1) {
+    if (regcomp (maytrics->metrics_regex, "/api/v1/(.+)/metrics.json",
+                 REG_EXTENDED) != 0) {
         log_fatal ("regcomp() failed");
         goto free_metrics_regex;
     }
@@ -36,9 +35,8 @@ init_maytrics (struct maytrics *  maytrics)
         log_fatal ("malloc() failed.");
         goto free_metrics_regex;
     }
-    if (regcomp (maytrics->metrics_regex,
-                 "/api/v1/(.+)/metrics/(.+).json",
-                 REG_EXTENDED) == -1) {
+    if (regcomp (maytrics->metric_regex, "/api/v1/(.+)/metrics/(.+).json",
+                 REG_EXTENDED) != 0) {
         log_fatal ("regcomp() failed");
         goto free_metric_regex;
     }
