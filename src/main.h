@@ -20,6 +20,7 @@ struct maytrics {
     redisContext *              redis;
 
     regex_t *                   metrics_regex;
+    regex_t *                   metric_regex;
 
     const char *                host;
     int                         port;

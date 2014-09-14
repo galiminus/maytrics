@@ -2,9 +2,9 @@
 #include "utils.h"
 #include "redis.h"
 #include "init.h"
-#include "access.h"
-#include "metric.h"
-#include "metrics.h"
+#include "access_controller.h"
+#include "metric_controller.h"
+#include "metrics_controller.h"
 
 int
 main ()
@@ -71,7 +71,7 @@ main ()
         goto evhtp_free;
     }
 
-    metric_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/.+/metrics/(.+).json",
+    metric_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics/(.+).json",
                                                metric_controller,
                                                maytrics);
     if (metric_controller_cb == NULL) {
