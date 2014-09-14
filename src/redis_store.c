@@ -1,6 +1,75 @@
 #include "main.h"
 
 int
+redis_backend_store_access_token (struct maytrics *   maytrics,
+                                  const char *        user,
+                                  const char *        access_token)
+{
+#define REDIS_EXPIRE    "3600"
+
+    redisReply *	reply;
+
+    reply = redisCommand (maytrics->redis, "SET tokens:%s %s",
+                          access_token, user);
+    if (reply == NULL || reply->type == REDIS_REPLY_NIL) {
+        log_error ("redisCommand(SET) failed: %s", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        return (EVHTP_RES_SERVERR);
+    }
+    freeReplyObject (reply);
+
+    reply = redisCommand (maytrics->redis, "EXPIRE tokens:%s " REDIS_EXPIRE,
+                          access_token);
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+        log_error ("redisCommand(EXPIRE) failed: %s.", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        return (EVHTP_RES_SERVERR);
+    }
+    freeReplyObject(reply);
+    return (0);
+}
+
+int
+redis_backend_check_user_from_token (struct maytrics *        maytrics,
+                                     const char *             access_token,
+                                     const char *             user)
+{
+    redisReply *	reply;
+
+    int			status;
+
+    reply = redisCommand (maytrics->redis, "GET tokens:%s", access_token);
+
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
+        log_error ("redisCommand(GET) failed: %s", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        status = EVHTP_RES_SERVERR;
+        goto exit;
+    }
+    if (reply->type == REDIS_REPLY_NIL) {
+        status = EVHTP_RES_UNAUTH;
+        goto free_reply_object;
+    }
+    if (strncmp (user, reply->str, reply->len)) {
+        status = EVHTP_RES_UNAUTH;
+        goto free_reply_object;
+    }
+    return (0);
+
+  free_reply_object:
+    freeReplyObject (reply);
+
+  exit:
+    return (status);
+}
+
+int
 redis_backend_delete_metric (struct maytrics *        maytrics,
                              const char *             user,
                              long                     id)

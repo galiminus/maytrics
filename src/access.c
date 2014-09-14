@@ -10,18 +10,22 @@
 #include <sys/queue.h>
 
 #include "main.h"
+#include "redis_store.h"
 #include "utils.h"
 
 struct profile_request_data {
     struct maytrics *   maytrics;
     evhtp_request_t *   req;
 
-    const char *        access_token;
+    char *              user;
+    char *              access_token;
+
+    int (*callback)(evhtp_request_t *, struct maytrics *, int);
 };
 
 void
 parse_google_profile (struct evhttp_request *   response,
-                      void *                    _profile_request_data)
+                      void *                    _data)
 {
 #define REDIS_EXPIRE    "3600"
 
@@ -36,29 +40,27 @@ parse_google_profile (struct evhttp_request *   response,
 
     const char *        id;
 
-    redisReply *	reply;
+    struct profile_request_data *       data =
+        (struct profile_request_data *)_data;
 
-    struct profile_request_data *       profile_request_data =
-        (struct profile_request_data *)_profile_request_data;
-
-    struct maytrics *   maytrics = profile_request_data->maytrics;
-    evhtp_request_t *   req = profile_request_data->req;
+    struct maytrics *   maytrics = data->maytrics;
+    evhtp_request_t *   req = data->req;
 
     if (evhttp_request_get_response_code (response) != 200) {
         status = evhttp_request_get_response_code (response);
-        goto free_profile_request_data;
+        goto free_data;
     }
 
-    response_size = evbuffer_get_length (evhttp_request_get_input_buffer(response));
+    response_size = evbuffer_get_length (evhttp_request_get_input_buffer (response));
     body = malloc (response_size);
     if (body == NULL) {
         log_error ("malloc() failed.");
         status = EVHTP_RES_SERVERR;
-        goto free_profile_request_data;
+        goto free_data;
     }
 
-    if (evbuffer_copyout(evhttp_request_get_input_buffer(response), body, response_size) == -1) {
-        log_error ("evbuffer_remove(%d) failed.", response_size);
+    if (evbuffer_copyout(evhttp_request_get_input_buffer (response), body, response_size) == -1) {
+    log_error ("evbuffer_remove(%d) failed.", response_size);
         status = EVHTP_RES_SERVERR;
         goto free_body;
     }
@@ -77,38 +79,23 @@ parse_google_profile (struct evhttp_request *   response,
     }
 
     id = json_string_value (json_id);
+    if (strcmp (id, data->user)) {
+        status = EVHTP_RES_UNAUTH;
+        log_error ("google ID and user ID don't match.");
+        goto json_decref;
+    }
 
-    reply = redisCommand (maytrics->redis, "SET tokens:%s %s",
-                          profile_request_data->access_token, id);
-    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-        log_error ("redisCommand(SET) failed: %s.", maytrics->redis->errstr);
-        if (reply) {
-            freeReplyObject (reply);
-        }
-
+    status = redis_backend_store_access_token (maytrics, data->user,
+                                               data->access_token);
+    if (status != 0) {
         status = EVHTP_RES_SERVERR;
         goto json_decref;
     }
-    freeReplyObject(reply);
-
-    reply = redisCommand (maytrics->redis, "EXPIRE tokens:%s " REDIS_EXPIRE,
-                          profile_request_data->access_token);
-    if (reply == NULL || reply->type == REDIS_REPLY_ERROR) {
-        log_error ("redisCommand(EXPIRE) failed: %s.", maytrics->redis->errstr);
-        if (reply) {
-            freeReplyObject (reply);
-        }
-
-        status = EVHTP_RES_SERVERR;
-        goto json_decref;
-    }
-    freeReplyObject(reply);
-
     json_decref (json_root);
     free (body);
-    free (profile_request_data);
+    free (data);
 
-    status = EVHTP_RES_OK;
+    status = data->callback (req, maytrics, EVHTP_RES_OK);
 
     set_metrics_comment (req, status);
     evhtp_send_reply (req, status);
@@ -120,26 +107,24 @@ parse_google_profile (struct evhttp_request *   response,
   free_body:
     free (body);
 
-  free_profile_request_data:
-    free (profile_request_data);
+  free_data:
+    free (data);
+
+    status = data->callback (req, maytrics, status);
 
     set_metrics_comment (req, status);
     evhtp_send_reply (req, status);
     return ;
 }
 
-int
+static int
 make_profile_path (const char *             access_token,
                    char **                  path)
 {
 #define GOOGLE_PLUS_PATH        "/plus/v1/people/me?access_token="
 
     int                         status = 0;
-
-
     size_t                      path_size;
-
-
 
     path_size = strlen (GOOGLE_PLUS_PATH) + strlen (access_token) + sizeof (char);
     *path = malloc (path_size);
@@ -162,44 +147,58 @@ make_profile_path (const char *             access_token,
 }
 
 int
-access_controller_get (evhtp_request_t *        req,
-                       struct maytrics *        maytrics)
+connected_context (evhtp_request_t *      req,
+                   struct maytrics *      maytrics,
+                   const char *           user,
+                   const char *           access_token,
+                   int (*callback)(evhtp_request_t *, struct maytrics *, int))
 {
 #define GOOGLE_HOST             "www.googleapis.com"
 #define GOOGLE_PORT             443
 
-    int                         status = 0;
+    struct profile_request_data *       data;
+    struct evhttp_request *             profile_request;
 
-    char *                      path;
+    char *                              path;
+    SSL *                               ssl;
+    struct bufferevent *                buffer_event;
+    int                                 status;
 
-    struct evhttp_connection *  connection;
-    struct evhttp_request *     profile_request;
-    struct evkeyvalq *          output_headers;
+    struct evhttp_connection *          connection;
 
-    SSL *                       ssl;
-    struct bufferevent *        buffer_event;
+    struct evkeyvalq *                  output_headers;
 
-    struct profile_request_data *       profile_request_data;
+    status = redis_backend_check_user_from_token (maytrics, access_token, user);
+    if (status == 0) {
+        return (callback (req, maytrics, EVHTP_RES_OK));
+    }
 
-    profile_request_data = malloc (sizeof (struct profile_request_data));
-    if (profile_request_data == NULL) {
+    data = malloc (sizeof (struct profile_request_data));
+    if (data == NULL) {
         log_error ("malloc() failed.");
         status = EVHTP_RES_SERVERR;
         goto exit;
     }
-    profile_request_data->maytrics = maytrics;
-    profile_request_data->req = req;
-
-    profile_request_data->access_token =
-        evhtp_kv_find (req->uri->query, "access_token");
-    if (profile_request_data->access_token == NULL) {
-        status = EVHTP_RES_UNAUTH;
-        goto free_profile_request_data;
+    data->user = strdup (user);
+    if (data->user == NULL) {
+        log_error ("strdup() failed.");
+        status = EVHTP_RES_SERVERR;
+        goto free_data;
     }
+    data->access_token = strdup (access_token);
+    if (data->user == NULL) {
+        log_error ("strdup() failed.");
+        status = EVHTP_RES_SERVERR;
+        goto free_user;
+    }
+    data->maytrics = maytrics;
+    data->req = req;
+    data->callback = callback;
 
-    if ((status = make_profile_path (profile_request_data->access_token,
-                                     &path)) != 0) {
-        goto free_profile_request_data;
+    if ((status = make_profile_path (data->access_token, &path)) != 0) {
+        log_error ("make_profile_path() failed.");
+        status = EVHTP_RES_SERVERR;
+        goto free_access_token;
     }
 
     ssl = SSL_new (maytrics->ssl_ctx);
@@ -208,7 +207,6 @@ access_controller_get (evhtp_request_t *        req,
         status = EVHTP_RES_SERVERR;
         goto free_path;
     }
-
     SSL_set_tlsext_host_name (ssl, GOOGLE_HOST);
 
     buffer_event =
@@ -234,8 +232,7 @@ access_controller_get (evhtp_request_t *        req,
         goto bufferevent_free;
     }
 
-    profile_request = evhttp_request_new (parse_google_profile,
-                                          profile_request_data);
+    profile_request = evhttp_request_new (parse_google_profile, data);
     if (profile_request == NULL) {
         log_error ("evhttp_request_new() failed.");
         status = EVHTP_RES_SERVERR;
@@ -248,15 +245,15 @@ access_controller_get (evhtp_request_t *        req,
 
     if (evhttp_make_request (connection, profile_request,
                              EVHTTP_REQ_GET, path) == -1) {
-        status = EVHTP_RES_SERVERR;
         log_error ("evhttp_make_request() failed;");
+        status = EVHTP_RES_SERVERR;
         goto evhttp_request_free;
     }
     evhttp_connection_set_timeout(profile_request->evcon, 600);
 
     free (path);
 
-    return (status);
+    return (0);
 
   evhttp_request_free:
     evhttp_request_free (profile_request);
@@ -273,41 +270,16 @@ access_controller_get (evhtp_request_t *        req,
   free_path:
     free (path);
 
-  free_profile_request_data:
-    free (profile_request_data);
+  free_access_token:
+    free (data->access_token);
+
+  free_user:
+    free (data->user);
+
+  free_data:
+    free (data);
 
   exit:
     return (status);
 }
 
-void
-access_controller (evhtp_request_t * req, void * _maytrics)
-{
-    struct maytrics *    maytrics =
-        (struct maytrics *)_maytrics;
-
-    int                  status;
-
-    if (set_origin (req, maytrics) == -1) {
-        status = EVHTP_RES_SERVERR;
-        goto exit;
-    }
-
-    switch (req->method) {
-    case htp_method_HEAD:
-    case htp_method_GET:
-        status = access_controller_get (req, maytrics);
-        break ;
-
-    default:
-        status = EVHTP_RES_METHNALLOWED;
-    }
-
-  exit:
-    if (status != 0) {
-        set_metrics_comment (req, status);
-        evhtp_send_reply (req, status);
-    }
-
-    return ;
-}

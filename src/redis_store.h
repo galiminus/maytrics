@@ -4,6 +4,16 @@
 #include "main.h"
 
 int
+redis_backend_store_access_token (struct maytrics *   maytrics,
+                                  const char *        user,
+                                  const char *        access_token);
+
+int
+redis_backend_check_user_from_token (struct maytrics *        maytrics,
+                                     const char *             access_token,
+                                     const char *             user);
+
+int
 redis_backend_delete_metric (struct maytrics *        maytrics,
                              const char *             user,
                              long                     id);

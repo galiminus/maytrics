@@ -1,6 +1,8 @@
 #include "main.h"
 #include "metric_model.h"
 #include "utils.h"
+#include "server.h"
+#include "access.h"
 
 static int
 extract_user_from_path (evhtp_request_t *       req,
@@ -43,12 +45,16 @@ metrics_controller_get (evhtp_request_t *       req,
 }
 
 int
-metrics_controller_post (evhtp_request_t *        req,
-                         struct maytrics *        maytrics)
+metrics_controller_post_connected (evhtp_request_t *        req,
+                                   struct maytrics *        maytrics,
+                                   int                      auth_status)
 {
     char *              user;
     int                 status;
 
+    if (auth_status != 0) {
+        return (auth_status);
+    }
     if (extract_user_from_path (req, maytrics, &user) == -1) {
         return (EVHTP_RES_SERVERR);
     }
@@ -56,6 +62,35 @@ metrics_controller_post (evhtp_request_t *        req,
     status = create_metric (req, maytrics, user);
     free (user);
 
+    return (status);
+}
+
+int
+metrics_controller_post (evhtp_request_t *        req,
+                         struct maytrics *        maytrics)
+{
+    char *              user;
+    const char *        access_token;
+
+    int                 status;
+
+    if (extract_user_from_path (req, maytrics, &user) == -1) {
+        log_error ("extract_user_from_path() failed.");
+        status = EVHTP_RES_SERVERR;
+        goto exit;
+    }
+    if (extract_access_token (req, &access_token) == -1) {
+        log_error ("extract_access_token() failed.");
+        status = EVHTP_RES_UNAUTH;
+        goto free_user;
+    }
+    status = connected_context (req, maytrics, user, "lol",
+                                metrics_controller_post_connected);
+
+  free_user:
+    free (user);
+
+  exit:
     return (status);
 }
 
@@ -91,8 +126,10 @@ metrics_controller (evhtp_request_t * req, void * _maytrics)
     }
 
   exit:
-    set_metrics_comment (req, status);
-    evhtp_send_reply (req, status);
+    if (status != 0) {
+        set_metrics_comment (req, status);
+        evhtp_send_reply (req, status);
+    }
 
     return ;
 }

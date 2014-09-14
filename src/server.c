@@ -17,6 +17,17 @@ extract_data (evhtp_request_t * req,
 }
 
 int
+extract_access_token (evhtp_request_t * req,
+                      const char **     access_token)
+{
+    *access_token = evhtp_kv_find (req->uri->query, "access_token");
+    if (*access_token == NULL) {
+        return (-1);
+    }
+    return (0);
+}
+
+int
 add_json_response (evhtp_request_t *    req,
                    json_t *             json_root)
 {

@@ -53,21 +53,19 @@ init_maytrics (struct maytrics *  maytrics)
     }
 
     log_level_string = getenv ("LOG_LEVEL");
-    if (log_level_string == NULL) {
-        return (0);
-    }
-
-    if (!strcmp (log_level_string, "LOG_FATAL")) {
-        log_level = LOG_FATAL;
-    }
-    else if (!strcmp (log_level_string, "LOG_ERROR")) {
-        log_level = LOG_ERROR;
-    }
-    else if (!strcmp (log_level_string, "LOG_INFO")) {
-        log_level = LOG_INFO;
-    }
-    else if (!strcmp (log_level_string, "LOG_DEBUG")) {
-        log_level = LOG_DEBUG;
+    if (log_level_string != NULL) {
+        if (!strcmp (log_level_string, "LOG_FATAL")) {
+            log_level = LOG_FATAL;
+        }
+        else if (!strcmp (log_level_string, "LOG_ERROR")) {
+            log_level = LOG_ERROR;
+        }
+        else if (!strcmp (log_level_string, "LOG_INFO")) {
+            log_level = LOG_INFO;
+        }
+        else if (!strcmp (log_level_string, "LOG_DEBUG")) {
+            log_level = LOG_DEBUG;
+        }
     }
 
     maytrics->allowed_origin = getenv ("ALLOWED_ORIGIN");

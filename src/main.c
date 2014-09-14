@@ -1,7 +1,6 @@
 #include "main.h"
 #include "utils.h"
 #include "init.h"
-#include "access_controller.h"
 #include "metric_controller.h"
 #include "metrics_controller.h"
 #include "user_controller.h"
@@ -48,16 +47,6 @@ main ()
         log_fatal ("evhtp_new() failed.");
         status = 5;
         goto free_redis_client;
-    }
-
-
-    controller_cb = evhtp_set_regex_cb (htp, "/api/v1/access.json",
-                                        access_controller,
-                                        maytrics);
-    if (controller_cb == NULL) {
-        log_fatal ("evhtp_set_regex_cb() failed.");
-        status = 6;
-        goto evhtp_free;
     }
 
     controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics.json",
