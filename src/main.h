@@ -21,6 +21,7 @@ struct maytrics {
 
     regex_t *                   metrics_regex;
     regex_t *                   metric_regex;
+    regex_t *                   user_regex;
 
     const char *                host;
     int                         port;

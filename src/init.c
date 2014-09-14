@@ -19,7 +19,7 @@ init_maytrics (struct maytrics *  maytrics)
     }
     maytrics->port = atoi (port);
 
-    maytrics->metrics_regex = (regex_t *)malloc (sizeof (regex_t));
+    maytrics->metrics_regex = malloc (sizeof (regex_t));
     if (maytrics->metrics_regex == NULL) {
         log_fatal ("malloc() failed.");
         goto exit;
@@ -30,7 +30,7 @@ init_maytrics (struct maytrics *  maytrics)
         goto free_metrics_regex;
     }
 
-    maytrics->metric_regex = (regex_t *)malloc (sizeof (regex_t));
+    maytrics->metric_regex = malloc (sizeof (regex_t));
     if (maytrics->metric_regex == NULL) {
         log_fatal ("malloc() failed.");
         goto free_metrics_regex;
@@ -39,6 +39,17 @@ init_maytrics (struct maytrics *  maytrics)
                  REG_EXTENDED) != 0) {
         log_fatal ("regcomp() failed");
         goto free_metric_regex;
+    }
+
+    maytrics->user_regex = malloc (sizeof (regex_t));
+    if (maytrics->metrics_regex == NULL) {
+        log_fatal ("malloc() failed.");
+        goto free_metric_regex;
+    }
+    if (regcomp (maytrics->user_regex, "/api/v1/(.+).json",
+                 REG_EXTENDED) != 0) {
+        log_fatal ("regcomp() failed");
+        goto free_user_regex;
     }
 
     log_level_string = getenv ("LOG_LEVEL");
@@ -69,13 +80,13 @@ init_maytrics (struct maytrics *  maytrics)
     maytrics->ssl_ctx = SSL_CTX_new (SSLv23_method ());
     if (maytrics->ssl_ctx == NULL) {
         log_error ("SSL_CTX_new() failed.");
-        goto regfree;
+        goto free_user_regex;
     }
 
     return (0);
 
-  regfree:
-    regfree (maytrics->metrics_regex);
+  free_user_regex:
+    regfree (maytrics->user_regex);
 
   free_metric_regex:
     free (maytrics->metric_regex);

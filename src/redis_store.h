@@ -36,4 +36,14 @@ redis_backend_get_metric (struct maytrics *        maytrics,
                           long                     id,
                           json_t **                json_root);
 
+int
+redis_backend_get_user (struct maytrics *        maytrics,
+                        const char *             user,
+                        json_t **                json_root);
+
+int
+redis_backend_store_user (struct maytrics *        maytrics,
+                          const char *             user,
+                          json_t *                 json_root);
+
 #endif /* !__MAYTRICS_REDIS_STORE_H__ */

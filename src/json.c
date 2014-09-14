@@ -67,7 +67,6 @@ add_id_to_object (struct maytrics *     maytrics,
     return (status);
 }
 
-
 int
 parse_metric_object (const char *       json_string,
                      size_t             json_length,
@@ -114,6 +113,51 @@ parse_metric_object (const char *       json_string,
 
     value = json_integer_value (json_value);
     if (value < 0 || value > 10) {
+        status = EVHTP_RES_400;
+        goto json_decref;
+    }
+
+    return (0);
+
+  json_decref:
+    json_decref (*json_root);
+
+  exit:
+    return (status);
+}
+
+int
+parse_user_object (const char *       json_string,
+                   size_t             json_length,
+                   json_t **          json_root)
+{
+    json_t *            json_username;
+
+    json_error_t        json_error;
+
+    int                 status;
+
+    const char *        username;
+
+    *json_root = json_loadb (json_string, json_length, 0, &json_error);
+    if (*json_root == NULL) {
+        log_error ("evbuffer_copyout() failed.");
+        status = EVHTP_RES_400;
+        goto exit;
+    }
+
+    if (!json_is_object (*json_root)) {
+        status = EVHTP_RES_400;
+        goto json_decref;
+    }
+
+    json_username = json_object_get (*json_root, "username");
+    if (!json_is_string (json_username)) {
+        status = EVHTP_RES_400;
+        goto json_decref;
+    }
+    username = json_string_value (json_username);
+    if (strlen (username) == 0) {
         status = EVHTP_RES_400;
         goto json_decref;
     }

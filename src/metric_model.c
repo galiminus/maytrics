@@ -91,7 +91,7 @@ create_metric (evhtp_request_t *        req,
     status = parse_metric_object (json_string, json_length, &json_root);
     if (status != 0) {
         log_error ("setup_metric_object() failed.");
-        goto free_data;
+        goto free_json_string;
     }
 
     status = add_id_to_object (maytrics, json_root, &id);
@@ -141,7 +141,7 @@ create_metric (evhtp_request_t *        req,
   json_decref:
     json_decref (json_root);
 
-  free_data:
+  free_json_string:
     free (json_string);
 
   exit:
@@ -216,18 +216,12 @@ update_metric (evhtp_request_t *        req,
     status = parse_metric_object (json_string, json_length, &json_root);
     if (status != 0) {
         log_error ("setup_metric_object() failed.");
-        goto free_data;
+        goto free_json_string;
     }
 
     status = add_id_to_object (maytrics, json_root, &id);
     if (status != 0) {
         log_error ("add_id_to_object() failed.");
-        goto json_decref;
-    }
-
-    status = redis_backend_delete_metric (maytrics, user, id);
-    if (status != 0) {
-        log_error ("redis_backend_delete_metric() failed.");
         goto json_decref;
     }
 
@@ -270,7 +264,7 @@ update_metric (evhtp_request_t *        req,
   json_decref:
     json_decref (json_root);
 
-  free_data:
+  free_json_string:
     free (json_string);
 
   exit:

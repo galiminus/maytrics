@@ -4,6 +4,7 @@
 #include "access_controller.h"
 #include "metric_controller.h"
 #include "metrics_controller.h"
+#include "user_controller.h"
 
 int
 main ()
@@ -14,9 +15,7 @@ main ()
 
     struct maytrics *           maytrics;
 
-    evhtp_callback_t *          access_controller_cb;
-    evhtp_callback_t *          metrics_controller_cb;
-    evhtp_callback_t *          metric_controller_cb;
+    evhtp_callback_t *          controller_cb;
 
     maytrics = (struct maytrics *)malloc (sizeof (struct maytrics));
     if (maytrics == NULL) {
@@ -52,43 +51,52 @@ main ()
     }
 
 
-    access_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/access.json",
-                                               access_controller,
-                                               maytrics);
-    if (access_controller_cb == NULL) {
+    controller_cb = evhtp_set_regex_cb (htp, "/api/v1/access.json",
+                                        access_controller,
+                                        maytrics);
+    if (controller_cb == NULL) {
         log_fatal ("evhtp_set_regex_cb() failed.");
         status = 6;
         goto evhtp_free;
     }
 
-    metrics_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics.json",
-                                                metrics_controller,
-                                                maytrics);
-    if (metrics_controller_cb == NULL) {
+    controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics.json",
+                                        metrics_controller,
+                                        maytrics);
+    if (controller_cb == NULL) {
         log_fatal ("evhtp_set_regex_cb() failed.");
         status = 8;
         goto evhtp_free;
     }
 
-    metric_controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics/(.+).json",
-                                               metric_controller,
-                                               maytrics);
-    if (metric_controller_cb == NULL) {
+    controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+)/metrics/(.+).json",
+                                        metric_controller,
+                                        maytrics);
+    if (controller_cb == NULL) {
         log_fatal("evhtp_set_regex_cb() failed.");
+        status = 9;
+        goto evhtp_free;
+    }
+
+    controller_cb = evhtp_set_regex_cb (htp, "/api/v1/(.+).json",
+                                        user_controller,
+                                        maytrics);
+    if (controller_cb == NULL) {
+        log_fatal ("evhtp_set_regex_cb() failed.");
         status = 7;
         goto evhtp_free;
     }
 
     if (evhtp_bind_socket (htp, maytrics->host, maytrics->port, 1024) != 0) {
         log_fatal ("evhtp_bind_socket(%s, %d) failed.", maytrics->host, maytrics->port);
-        status = 9;
+        status = 10;
         goto evhtp_free;
     }
     log_info ("Server launched on %s:%d", maytrics->host, maytrics->port);
 
     if (event_base_loop (maytrics->evbase, 0) == -1) {
         log_fatal ("event_base_loop() failed.");
-        status = 10;
+        status = 11;
         goto evhtp_unbind_socket;
     }
 

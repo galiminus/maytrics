@@ -3,12 +3,12 @@ require 'spec_helper'
 describe "MetricController" do
   before do
     system "redis-cli flushall"
-#    @pid = Process.spawn "bin/maytrics"
-#    sleep 2
+    @pid = Process.spawn "bin/maytrics"
+    sleep 2
   end
 
   after do
-#    Process.kill 'TERM', @pid
+    Process.kill 'TERM', @pid
   end
 
   it "save a metric" do

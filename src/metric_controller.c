@@ -2,9 +2,7 @@
 #include "metric_model.h"
 #include "utils.h"
 
-
-
-int
+static int
 extract_user_and_id_from_path (evhtp_request_t *       req,
                                struct maytrics *       maytrics,
                                char **                 user,

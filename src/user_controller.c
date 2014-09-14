@@ -1,5 +1,5 @@
 #include "main.h"
-#include "metric_model.h"
+#include "user_model.h"
 #include "utils.h"
 
 static int
@@ -10,7 +10,7 @@ extract_user_from_path (evhtp_request_t *       req,
 #define METRICS_REGEX_MAX_MATCH 3
     regmatch_t          pmatch[METRICS_REGEX_MAX_MATCH];
 
-    if (regexec (maytrics->metrics_regex,
+    if (regexec (maytrics->user_regex,
                  req->uri->path->full,
                  METRICS_REGEX_MAX_MATCH + 1, pmatch, 0) == REG_NOMATCH) {
         log_error ("regexec() failed.");
@@ -26,8 +26,8 @@ extract_user_from_path (evhtp_request_t *       req,
 }
 
 int
-metrics_controller_get (evhtp_request_t *       req,
-                        struct maytrics *       maytrics)
+user_controller_get (evhtp_request_t *       req,
+                     struct maytrics *       maytrics)
 {
     char *              user;
     int                 status;
@@ -36,15 +36,15 @@ metrics_controller_get (evhtp_request_t *       req,
         return (EVHTP_RES_SERVERR);
     }
 
-    status = get_metrics (req, maytrics, user);
+    status = get_user (req, maytrics, user);
     free (user);
 
     return (status);
 }
 
 int
-metrics_controller_post (evhtp_request_t *        req,
-                         struct maytrics *        maytrics)
+user_controller_put (evhtp_request_t *        req,
+                     struct maytrics *        maytrics)
 {
     char *              user;
     int                 status;
@@ -53,28 +53,28 @@ metrics_controller_post (evhtp_request_t *        req,
         return (EVHTP_RES_SERVERR);
     }
 
-    status = create_metric (req, maytrics, user);
+    status = update_user (req, maytrics, user);
     free (user);
 
     return (status);
 }
 
 void
-metrics_controller (evhtp_request_t * req, void * _maytrics)
+user_controller (evhtp_request_t * req, void * _maytrics)
 {
     struct maytrics *    maytrics =
         (struct maytrics *)_maytrics;
 
-    int                         status;
+    int                  status;
 
     switch (req->method) {
-    case htp_method_POST:
-        status = metrics_controller_post (req, maytrics);
+    case htp_method_PUT:
+        status = user_controller_put (req, maytrics);
         break ;
 
     case htp_method_HEAD:
     case htp_method_GET:
-        status = metrics_controller_get (req, maytrics);
+        status = user_controller_get (req, maytrics);
         break ;
 
     default:

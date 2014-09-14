@@ -15,4 +15,9 @@ parse_metric_object (const char *       json_string,
                      size_t             json_length,
                      json_t **          json_root);
 
+int
+parse_user_object (const char *       json_string,
+                   size_t             json_length,
+                   json_t **          json_root);
+
 #endif /* !__MAYTRICS_JSON_H__ */
