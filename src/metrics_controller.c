@@ -67,6 +67,11 @@ metrics_controller (evhtp_request_t * req, void * _maytrics)
 
     int                         status;
 
+    if (set_origin (req, maytrics) == -1) {
+        status = EVHTP_RES_SERVERR;
+        goto exit;
+    }
+
     switch (req->method) {
     case htp_method_POST:
         status = metrics_controller_post (req, maytrics);
@@ -77,10 +82,15 @@ metrics_controller (evhtp_request_t * req, void * _maytrics)
         status = metrics_controller_get (req, maytrics);
         break ;
 
+    case htp_method_OPTIONS:
+        status = EVHTP_RES_OK;
+        break ;
+
     default:
         status = EVHTP_RES_METHNALLOWED;
     }
 
+  exit:
     set_metrics_comment (req, status);
     evhtp_send_reply (req, status);
 

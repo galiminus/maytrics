@@ -51,6 +51,14 @@ set_origin (evhtp_request_t *        req,
     }
     evhtp_headers_add_header(req->headers_out, header);
 
+    header = evhtp_header_new("Access-Control-Allow-Headers",
+                              "Origin, Content-Type, Accept",
+                              0, 0);
+    if (header == NULL) {
+        return (-1);
+    }
+    evhtp_headers_add_header(req->headers_out, header);
+
     return (0);
 }
 
