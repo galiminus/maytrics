@@ -84,7 +84,7 @@ metrics_controller_post (evhtp_request_t *        req,
         status = EVHTP_RES_UNAUTH;
         goto free_user;
     }
-    status = connected_context (req, maytrics, user, "lol",
+    status = connected_context (req, maytrics, user, access_token,
                                 metrics_controller_post_connected);
 
   free_user:
