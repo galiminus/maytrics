@@ -52,10 +52,11 @@ metrics_controller_post_connected (evhtp_request_t *        req,
     char *              user;
     int                 status;
 
-    if (auth_status != 0) {
+    if (auth_status != EVHTP_RES_OK) {
         return (auth_status);
     }
     if (extract_user_from_path (req, maytrics, &user) == -1) {
+        log_error ("extract_user_from_path() failed.");
         return (EVHTP_RES_SERVERR);
     }
 
