@@ -52,17 +52,6 @@ init_maytrics (struct maytrics *  maytrics)
         goto free_user_regex;
     }
 
-    maytrics->access_token_regex = malloc (sizeof (regex_t));
-    if (maytrics->access_token_regex == NULL) {
-        log_fatal ("malloc() failed.");
-        goto free_user_regex;
-    }
-    if (regcomp (maytrics->access_token_regex, "^[A-Za-z0-9\\.]+$",
-                 REG_EXTENDED) != 0) {
-        log_fatal ("regcomp() failed");
-        goto free_access_token_regex;
-    }
-
     log_level_string = getenv ("LOG_LEVEL");
     if (log_level_string != NULL) {
         if (!strcmp (log_level_string, "LOG_FATAL")) {
@@ -82,9 +71,6 @@ init_maytrics (struct maytrics *  maytrics)
     maytrics->allowed_origin = getenv ("ALLOWED_ORIGIN");
 
     return (0);
-
-  free_access_token_regex:
-    regfree (maytrics->access_token_regex);
 
   free_user_regex:
     regfree (maytrics->user_regex);

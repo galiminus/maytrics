@@ -19,8 +19,6 @@ struct maytrics {
     regex_t *                   metric_regex;
     regex_t *                   user_regex;
 
-    regex_t *                   access_token_regex;
-
     const char *                host;
     int                         port;
 

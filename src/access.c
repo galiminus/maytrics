@@ -1,3 +1,5 @@
+#include <event2/http.h>
+
 #include "main.h"
 #include "redis_store.h"
 #include "utils.h"
@@ -57,32 +59,49 @@ static int
 make_curl_command (const char *             access_token,
                    char **                  path)
 {
-#define CURL_COMMAND            "curl "
+#define CURL_COMMAND_START      "curl '"
 #define GOOGLE_PLUS_PATH        "/plus/v1/people/me?access_token="
 #define GOOGLE_HOST             "https://www.googleapis.com"
+#define CURL_COMMAND_END        "'"
 
     int                         status = 0;
     size_t                      path_size;
 
-    path_size = strlen (CURL_COMMAND) +
+    char *                      encoded_access_token;
+
+    encoded_access_token = evhttp_encode_uri (access_token);
+    if (encoded_access_token == NULL) {
+        goto exit;
+    }
+
+    path_size = strlen (CURL_COMMAND_START) +
         strlen (GOOGLE_HOST) +
         strlen (GOOGLE_PLUS_PATH) +
-        strlen (access_token) + sizeof (char);
+        strlen (encoded_access_token) +
+        strlen (CURL_COMMAND_END) +
+        sizeof (char);
 
     *path = malloc (path_size);
     if (*path == NULL) {
         status = EVHTP_RES_SERVERR;
-        goto exit;
+        goto free_encoded_access_token;
     }
-    if (snprintf (*path, path_size, CURL_COMMAND GOOGLE_HOST "%s%s", GOOGLE_PLUS_PATH, access_token) == -1) {
+    if (snprintf (*path, path_size,
+                  CURL_COMMAND_START GOOGLE_HOST "%s%s" CURL_COMMAND_END,
+                  GOOGLE_PLUS_PATH,
+                  encoded_access_token) == -1) {
         status = EVHTP_RES_SERVERR;
         goto free_path;
     }
+    free (encoded_access_token);
 
     return (0);
 
   free_path:
     free (*path);
+
+  free_encoded_access_token:
+    free (encoded_access_token);
 
   exit:
     return (status);

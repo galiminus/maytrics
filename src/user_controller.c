@@ -58,7 +58,7 @@ user_controller_put (evhtp_request_t *        req,
         status = EVHTP_RES_SERVERR;
         goto exit;
     }
-    if (extract_access_token (req, maytrics, &access_token) == -1) {
+    if (extract_access_token (req, &access_token) == -1) {
         log_error ("extract_access_token() failed.");
         status = EVHTP_RES_UNAUTH;
         goto free_user;
