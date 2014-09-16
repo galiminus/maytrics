@@ -47,29 +47,6 @@ extract_user_and_id_from_path (evhtp_request_t *       req,
 }
 
 int
-metric_controller_delete_connected (evhtp_request_t *        req,
-                                    struct maytrics *        maytrics,
-                                    int                      auth_status)
-{
-    char *              user;
-    long                id;
-
-    int                 status;
-
-    if (auth_status != EVHTP_RES_OK) {
-        return (auth_status);
-    }
-    if (extract_user_and_id_from_path (req, maytrics, &user, &id) == -1) {
-        log_error ("extract_user_and_id_from_path() failed.");
-        return (EVHTP_RES_SERVERR);
-    }
-    status = delete_metric (req, maytrics, user, id);
-    free (user);
-
-    return (status);
-}
-
-int
 metric_controller_delete (evhtp_request_t *        req,
                           struct maytrics *        maytrics)
 {
@@ -84,41 +61,22 @@ metric_controller_delete (evhtp_request_t *        req,
         status = EVHTP_RES_SERVERR;
         goto exit;
     }
-    if (extract_access_token (req, &access_token) == -1) {
+    if (extract_access_token (req, maytrics, &access_token) == -1) {
         log_error ("extract_access_token() failed.");
         status = EVHTP_RES_UNAUTH;
         goto free_user;
     }
-    status = connected_context (req, maytrics, user, access_token,
-                                metric_controller_delete_connected);
+    status = logged_in (maytrics, user, access_token);
+    if (status != EVHTP_RES_OK) {
+        log_error ("logged_in() failed.");
+        goto free_user;
+    }
+    status = delete_metric (req, maytrics, user, id);
 
   free_user:
     free (user);
 
   exit:
-    return (status);
-}
-
-int
-metric_controller_put_connected (evhtp_request_t *        req,
-                                 struct maytrics *        maytrics,
-                                 int                      auth_status)
-{
-    char *              user;
-    long                id;
-
-    int                 status;
-
-    if (auth_status != EVHTP_RES_OK) {
-        return (auth_status);
-    }
-    if (extract_user_and_id_from_path (req, maytrics, &user, &id) == -1) {
-        log_error ("extract_user_and_id_from_path() failed.");
-        return (EVHTP_RES_SERVERR);
-    }
-    status = update_metric (req, maytrics, user, id);
-    free (user);
-
     return (status);
 }
 
@@ -137,13 +95,17 @@ metric_controller_put (evhtp_request_t *        req,
         status = EVHTP_RES_SERVERR;
         goto exit;
     }
-    if (extract_access_token (req, &access_token) == -1) {
+    if (extract_access_token (req, maytrics, &access_token) == -1) {
         log_error ("extract_access_token() failed.");
         status = EVHTP_RES_UNAUTH;
         goto free_user;
     }
-    status = connected_context (req, maytrics, user, access_token,
-                                metric_controller_put_connected);
+    status = logged_in (maytrics, user, access_token);
+    if (status != EVHTP_RES_OK) {
+        log_error ("logged_in() failed.");
+        goto free_user;
+    }
+    status = update_metric (req, maytrics, user, id);
 
   free_user:
     free (user);
@@ -207,10 +169,8 @@ metric_controller (evhtp_request_t * req, void * _maytrics)
     }
 
   exit:
-    if (status != 0) {
-        set_metrics_comment (req, status);
-        evhtp_send_reply (req, status);
-    }
+    set_metrics_comment (req, status);
+    evhtp_send_reply (req, status);
 
     return ;
 }

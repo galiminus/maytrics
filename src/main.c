@@ -42,7 +42,7 @@ main ()
         goto event_base_free;
     }
 
-    htp = evhtp_new(maytrics->evbase, NULL);
+    htp = evhtp_new (maytrics->evbase, NULL);
     if (htp == NULL) {
         log_fatal ("evhtp_new() failed.");
         status = 5;

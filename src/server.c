@@ -17,11 +17,23 @@ extract_data (evhtp_request_t * req,
 }
 
 int
-extract_access_token (evhtp_request_t * req,
-                      const char **     access_token)
+extract_access_token (evhtp_request_t *         req,
+                      struct maytrics *         maytrics,
+                      const char **             access_token)
 {
+#define METRICS_REGEX_MAX_MATCH 1
+    regmatch_t          pmatch[METRICS_REGEX_MAX_MATCH];
+
     *access_token = evhtp_kv_find (req->uri->query, "access_token");
     if (*access_token == NULL) {
+        log_error ("evhtp_kv_find(access_token) failed.");
+        return (-1);
+    }
+
+    if (regexec (maytrics->access_token_regex,
+                 *access_token,
+                 METRICS_REGEX_MAX_MATCH + 1, pmatch, 0) == REG_NOMATCH) {
+        log_error ("regexec(access_token) failed.");
         return (-1);
     }
     return (0);

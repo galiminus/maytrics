@@ -14,6 +14,7 @@ extract_data (evhtp_request_t * req,
 
 int
 extract_access_token (evhtp_request_t * req,
+                      struct maytrics * maytrics,
                       const char **     access_token);
 
 #endif /* !__MAYTRICS_SERVER_H__ */

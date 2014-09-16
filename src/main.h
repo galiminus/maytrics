@@ -12,10 +12,6 @@
 
 #include <jansson.h>
 
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-
 struct maytrics {
     redisContext *              redis;
 
@@ -23,15 +19,14 @@ struct maytrics {
     regex_t *                   metric_regex;
     regex_t *                   user_regex;
 
+    regex_t *                   access_token_regex;
+
     const char *                host;
     int                         port;
 
     const char *                db_path;
 
-    evbase_t *                  evbase;
-
-    SSL_CTX *                   ssl_ctx;
-    SSL *                       ssl;
+    struct event_base *         evbase;
 
     const char *                allowed_origin;
 };
