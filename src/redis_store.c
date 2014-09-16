@@ -1,24 +1,11 @@
 #include "main.h"
 
-int
-redis_backend_store_access_token (struct maytrics *   maytrics,
-                                  const char *        user,
-                                  const char *        access_token)
+void
+redis_backend_store_refresh_token_expire (struct maytrics *   maytrics,
+                                          const char *        access_token)
 {
-#define REDIS_EXPIRE    "3600"
-
+#define REDIS_EXPIRE    "604800"
     redisReply *	reply;
-
-    reply = redisCommand (maytrics->redis, "SET tokens:%s %s",
-                          access_token, user);
-    if (reply == NULL || reply->type == REDIS_REPLY_NIL) {
-        log_error ("redisCommand(SET) failed: %s", maytrics->redis->errstr);
-        if (reply) {
-            freeReplyObject (reply);
-        }
-        return (EVHTP_RES_SERVERR);
-    }
-    freeReplyObject (reply);
 
     reply = redisCommand (maytrics->redis, "EXPIRE tokens:%s " REDIS_EXPIRE,
                           access_token);
@@ -30,6 +17,27 @@ redis_backend_store_access_token (struct maytrics *   maytrics,
         return (EVHTP_RES_SERVERR);
     }
     freeReplyObject(reply);
+
+
+int
+redis_backend_store_access_token (struct maytrics *   maytrics,
+                                  const char *        user,
+                                  const char *        access_token)
+{
+    redisReply *	reply;
+
+    reply = redisCommand (maytrics->redis, "SET tokens:%s %s",
+                          access_token, user);
+    if (reply == NULL || reply->type == REDIS_REPLY_NIL) {
+        log_error ("redisCommand(SET) failed: %s", maytrics->redis->errstr);
+        if (reply) {
+            freeReplyObject (reply);
+        }
+        return (EVHTP_RES_SERVERR);
+    }
+    redis_backend_store_refresh_token_expire (maytrics, access_token);
+    freeReplyObject (reply);
+
     return (0);
 }
 
@@ -60,6 +68,7 @@ redis_backend_check_user_from_token (struct maytrics *        maytrics,
         status = EVHTP_RES_UNAUTH;
         goto free_reply_object;
     }
+    redis_backend_store_refresh_token_expire (maytrics, access_token);
     return (0);
 
   free_reply_object:
