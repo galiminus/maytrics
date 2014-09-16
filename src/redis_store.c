@@ -14,10 +14,11 @@ redis_backend_store_refresh_token_expire (struct maytrics *   maytrics,
         if (reply) {
             freeReplyObject (reply);
         }
-        return (EVHTP_RES_SERVERR);
+        return ;
     }
     freeReplyObject(reply);
-
+    return ;
+}
 
 int
 redis_backend_store_access_token (struct maytrics *   maytrics,
